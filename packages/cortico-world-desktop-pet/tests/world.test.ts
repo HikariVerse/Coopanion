@@ -65,6 +65,25 @@ describe('tools without a page', () => {
 });
 
 describe('with a pet page', () => {
+  it('fixed 60 FPS defaults off, persists, broadcasts, hot reloads and rejects non-booleans', async () => {
+    const { world, cfg, persisted } = await mounted();
+    const page = await FakePage.open(origin(world));
+    cleanup.push(() => page.close());
+    expect((await (await fetch(`${origin(world)}/api/state`)).json()).fixed60Fps).toBe(false);
+    page.send({ t: 'prefs', fixed60Fps: true });
+    expect((await page.next((m) => m.t === 'prefs')).fixed60Fps).toBe(true);
+    expect(persisted).toContainEqual({ fixed60Fps: true });
+    expect(cfg.fixed60Fps).toBe(true);
+    page.send({ t: 'prefs', fixed60Fps: 'false' });
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    expect(cfg.fixed60Fps).toBe(true);
+    cfg.fixed60Fps = false;
+    expect((await page.next((m) => m.t === 'prefs' && m.fixed60Fps === false)).fixed60Fps).toBe(false);
+    const fresh = await FakePage.open(origin(world), 'role=pet&host=tab');
+    cleanup.push(() => fresh.close());
+    expect((await (await fetch(`${origin(world)}/api/state`)).json()).fixed60Fps).toBe(false);
+  });
+
   it('pet_say sends parsed beats and reports dropped markers', async () => {
     const { world } = await mounted();
     const page = await FakePage.open(origin(world));

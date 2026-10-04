@@ -20,6 +20,7 @@
     "build:installer": "tsx scripts/stage.ts && tsx scripts/pack.ts",
     "build:icons": "electron scripts/make-icons.cjs",
     "test": "vitest run",
+    "test:pet-framerate": "node --test tests-node/pet-framerate.test.mjs",
     "typecheck": "tsc --noEmit",
     "typecheck:web": "tsc -p tsconfig.web.json",
     "test:worlds": "vitest run --config vitest.worlds.config.ts",

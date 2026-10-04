@@ -7,7 +7,7 @@ import { DEFAULT_HOTKEY } from './asr/hotkey.ts';
 export const DESKTOP_PET_ID = 'desktop-pet';
 
 /** What the pet's menu offers, in its order; any of them can also show as a button beside the pet on hover. */
-export const PET_ACTIONS = ['chat', 'voice', 'roam', 'theme', 'sound', 'dress', 'hide'] as const;
+export const PET_ACTIONS = ['chat', 'voice', 'roam', 'theme', 'sound', 'framerate', 'dress', 'hide'] as const;
 export type PetAction = typeof PET_ACTIONS[number];
 /** Most hover buttons. */
 export const MAX_HOVER_BUTTONS = 6;
@@ -59,6 +59,8 @@ export interface DesktopPetConfigSection extends WorldSection {
   };
   roam: RoamMode;
   sound: boolean;
+  /** Disable idle presentation throttling; always target 60 FPS. */
+  fixed60Fps: boolean;
   theme: PetTheme;
   /** Actions shown as buttons beside the pet on hover, ids from PET_ACTIONS joined by commas. */
   hoverButtons: string;
@@ -95,6 +97,7 @@ export const DESKTOP_PET_DEFAULTS: DesktopPetConfigSection = {
   window: { enabled: true, electronFile: '', scale: 1 },
   roam: 'calm',
   sound: true,
+  fixed60Fps: false,
   theme: 'dark',
   hoverButtons: 'chat,voice',
   skin: {
@@ -125,6 +128,7 @@ export const DESKTOP_PET_CONFIG_GROUP: ConfigGroup = {
     properties: {
       [`${K}.user`]: { type: 'string', title: '怎么称呼你', description: '语音、打字和互动事件里用这个名字指代你。', 'x-hot': true },
       [`${K}.roam`]: { type: 'string', title: '行为模式', enum: ['free', 'calm', 'off'], description: 'free 常走动;calm 多待着;off 只做被要求的动作。', 'x-hot': true },
+      [`${K}.fixed60Fps`]: { type: 'boolean', title: '固定 60 FPS', description: '关闭时空闲约 30 FPS,运动约 60 FPS;开启后始终约 60 FPS。', 'x-hot': true },
       [`${K}.sound`]: { type: 'boolean', title: '音效', 'x-hot': true },
       [`${K}.theme`]: { type: 'string', title: '黑白模式', enum: ['dark', 'light'], description: 'dark 夜间:浅色身体、深色气泡;light 白天:深色身体、浅色气泡。', 'x-hot': true },
       [`${K}.hoverButtons`]: { type: 'string', title: '悬停按钮', description: `鼠标停在桌宠身上时旁边出现的按钮,最多 ${MAX_HOVER_BUTTONS} 个,逗号分隔:${PET_ACTIONS.join(', ')}。`, 'x-hot': true },
