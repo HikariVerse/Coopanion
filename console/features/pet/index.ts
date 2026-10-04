@@ -18,12 +18,13 @@ const KEYS = {
   theme: `${K}.theme`,
   scale: `${K}.window.scale`,
   sound: `${K}.sound`,
+  fixed60: `${K}.fixed60Fps`,
   hover: `${K}.hoverButtons`,
 } as const;
 
 /** The pet menu's actions in its order (the World's PET_ACTIONS), with the icon each shows. */
 const ACTIONS: ReadonlyArray<[id: string, icon: string]> = [
-  ['chat', 'chat'], ['voice', 'mic'], ['roam', 'roam_calm'], ['theme', 'moon'], ['sound', 'sound'], ['dress', 'shirt'], ['hide', 'eyeOff'],
+  ['chat', 'chat'], ['voice', 'mic'], ['roam', 'roam_calm'], ['theme', 'moon'], ['sound', 'sound'], ['framerate', 'settings'], ['dress', 'shirt'], ['hide', 'eyeOff'],
 ];
 /** Most hover buttons (the World's MAX_HOVER_BUTTONS). */
 const MAX_HOVER = 6;
@@ -43,9 +44,11 @@ const S = pick({
     themeLight: '白天(深色身体)',
     scale: '大小',
     sound: '音效',
+    fixed60: '固定 60 FPS',
+    fixed60Hint: '关闭时空闲约 30 FPS,运动约 60 FPS。',
     hover: '悬停按钮',
     hoverHint: (n: number) => `鼠标停在 Coo 身上时旁边出现的按钮,最多 ${n} 个。`,
-    actions: { chat: '打字', voice: '语音输入', roam: '行为模式', theme: '夜间模式', sound: '音效', dress: '装扮', hide: '隐藏桌宠' } as Record<string, string>,
+    actions: { chat: '打字', voice: '语音输入', roam: '行为模式', theme: '夜间模式', sound: '音效', framerate: '固定 60 FPS', dress: '装扮', hide: '隐藏桌宠' } as Record<string, string>,
     saved: '已保存',
     saveFailed: (why: string) => `没保存上:${why}`,
   },
@@ -63,9 +66,11 @@ const S = pick({
     themeLight: 'Day (dark body)',
     scale: 'Size',
     sound: 'Sounds',
+    fixed60: 'Fixed 60 FPS',
+    fixed60Hint: 'When off, idle presentation targets 30 FPS and motion targets 60 FPS.',
     hover: 'Hover buttons',
     hoverHint: (n: number) => `Buttons beside Coo while the pointer rests on it, up to ${n}.`,
-    actions: { chat: 'Type', voice: 'Voice input', roam: 'Walking', theme: 'Night mode', sound: 'Sounds', dress: 'Dress up', hide: 'Hide pet' } as Record<string, string>,
+    actions: { chat: 'Type', voice: 'Voice input', roam: 'Walking', theme: 'Night mode', sound: 'Sounds', framerate: 'Fixed 60 FPS', dress: 'Dress up', hide: 'Hide pet' } as Record<string, string>,
     saved: 'Saved',
     saveFailed: (why: string) => `Not saved: ${why}`,
   },
@@ -101,6 +106,7 @@ async function mount(ctx: FeatureContext): Promise<void> {
   const scaleBox = ui.h('div', 'companion-rangebox');
   scaleBox.append(scale, scaleText);
   const sound = ui.checkbox(S.sound, { onChange: (on) => void save(KEYS.sound, on) });
+  const fixed60 = ui.checkbox(S.fixed60, { onChange: (on) => void save(KEYS.fixed60, on) });
   // hover buttons: one round toggle per action, in the menu's order; picked ones are lit
   let picked: string[] = [];
   const hoverBox = ui.h('div', 'companion-hoverpick');
@@ -146,6 +152,7 @@ async function mount(ctx: FeatureContext): Promise<void> {
     row(S.theme, theme.el),
     row(S.scale, scaleBox),
     row('', sound.el),
+    row('', fixed60.el, S.fixed60Hint),
     row(S.hover, hoverBox, S.hoverHint(MAX_HOVER)),
     msg,
   );
@@ -197,6 +204,7 @@ async function mount(ctx: FeatureContext): Promise<void> {
     if (typeof values[KEYS.roam] === 'string') roam.setValue(values[KEYS.roam] as string);
     if (typeof values[KEYS.theme] === 'string') theme.setValue(values[KEYS.theme] as string);
     if (typeof values[KEYS.scale] === 'number' && active !== scale) { scale.value = String(values[KEYS.scale]); showScale(); }
+    if (typeof values[KEYS.fixed60] === 'boolean') fixed60.setChecked(values[KEYS.fixed60] as boolean);
     if (typeof values[KEYS.sound] === 'boolean') sound.setChecked(values[KEYS.sound] as boolean);
     if (typeof values[KEYS.hover] === 'string') {
       picked = (values[KEYS.hover] as string).split(',').map((x) => x.trim()).filter((x) => ACTIONS.some(([a]) => a === x));

@@ -507,6 +507,8 @@ export const MOTIONS = ['stand', 'jump', 'hop', 'look', 'turn', 'nod', 'shake', 
  * how long the mode has run, the talk level, drowsiness and how far the body sits.
  * `figure.groupTilt(mode, tilt, lean)`, if present, returns the rotation (degrees) the whole group gets
  * instead of tilt + lean; the frame carries tilt, lean and that rotation (groupRot) so the figure can bend the rest.
+ * `figure.idleFrameRate = 30` optionally permits the pet page to throttle settled idle/sit/sleep.
+ * Figures without this opt-in retain 60 FPS presentation; `frame.t` always carries seconds.
  * `figure.colors.z`, if present, colours the sleep z's (otherwise they take the skin's eye colour).
  */
 export function createPet(els, opts) {

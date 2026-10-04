@@ -340,6 +340,7 @@ export class DesktopPetWorld implements World {
       skin: this.cfg.skin,
       roam: this.cfg.roam,
       sound: this.cfg.sound,
+      fixed60Fps: this.cfg.fixed60Fps,
       theme: this.cfg.theme,
       hoverButtons: hoverButtonList(this.cfg.hoverButtons),
       scale: this.cfg.window.scale,
@@ -418,6 +419,7 @@ export class DesktopPetWorld implements World {
   private savePrefs(prefs: Record<string, unknown>): void {
     const patch: DeepPartial<DesktopPetConfigSection> = {};
     if (prefs.roam === 'free' || prefs.roam === 'calm' || prefs.roam === 'off') patch.roam = prefs.roam as RoamMode;
+    if (typeof prefs.fixed60Fps === 'boolean') patch.fixed60Fps = prefs.fixed60Fps;
     if (typeof prefs.sound === 'boolean') patch.sound = prefs.sound;
     if (prefs.theme === 'dark' || prefs.theme === 'light') patch.theme = prefs.theme as PetTheme;
     if (typeof prefs.mic === 'boolean') patch.asr = { enabled: prefs.mic };

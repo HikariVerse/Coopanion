@@ -10,6 +10,8 @@
  */
 import { applyTheme, createPet, createSfx, clamp, f, mini, normalizeSkin, skinCss, EXPRESSIONS, HEAD_TOP, ICONS } from './pet-core.js';
 
+import { createFrameLoop, needsSmoothFrames } from './frame-loop.js';
+
 const $ = (s) => document.querySelector(s);
 const host = window.petHost || null;
 document.body.classList.add(host ? 'desk' : 'tab');
@@ -21,7 +23,7 @@ const skinStyle = document.createElement('style');
 document.head.appendChild(skinStyle);
 
 const prefs = {
-  roam: 'calm', sound: true, theme: document.documentElement.dataset.theme, scale: 1, user: '伙伴', mic: false, micDevice: '', bot: null,
+  roam: 'calm', sound: true, fixed60Fps: false, theme: document.documentElement.dataset.theme, scale: 1, user: '伙伴', mic: false, micDevice: '', bot: null,
   /** Voice input: switched on, recognizer ready, why not, how to talk, and the mode in force. */
   voice: { enabled: false, ready: false, detail: null, hint: '', mode: 'hold' },
   /** The actions shown as buttons beside the pet on hover. */
@@ -81,6 +83,7 @@ async function applyFigure(s) {
 function applyPrefs(p) {
   if (p.skin) { const s = normalizeSkin(p.skin); ctl.setSkin(s); skinStyle.textContent = skinCss(s); applyFigure(s).catch((err) => console.error(err)); }
   if (p.roam) { prefs.roam = p.roam; ctl.setRoam(p.roam); }
+  if (typeof p.fixed60Fps === 'boolean') prefs.fixed60Fps = p.fixed60Fps;
   if (typeof p.sound === 'boolean') { prefs.sound = p.sound; sfx.set(p.sound); }
   if (p.theme === 'dark' || p.theme === 'light') { prefs.theme = p.theme; applyTheme(p.theme); }
   if (typeof p.scale === 'number') { prefs.scale = p.scale; ctl.resize(); }
@@ -685,6 +688,17 @@ const ACTIONS = {
     state: () => (prefs.sound ? '音效:开 · 点一下静音' : '音效:关 · 点一下打开'),
     run: () => send({ t: 'prefs', sound: !prefs.sound }),
   },
+  framerate: {
+    keep: true,
+    icon: () => ICONS.settings,
+    on: () => prefs.fixed60Fps,
+    state: () => prefs.fixed60Fps ? '固定 60 FPS:开' : '动态帧率:空闲 30 FPS,运动 60 FPS',
+    run: () => {
+      const fixed60Fps = !prefs.fixed60Fps;
+      applyPrefs({ fixed60Fps });
+      send({ t: 'prefs', fixed60Fps });
+    },
+  },
   dress: {
     icon: () => ICONS.shirt, cls: 'dress',
     state: () => '换配色、帽子、耳饰、眼镜、颈饰',
@@ -1089,19 +1103,27 @@ function stepBackdrop(dt) {
 }
 
 /* ---------- loop ---------- */
-let last = performance.now();
+const advanceFrame = createFrameLoop({
+  start: performance.now(),
+  active: () => needsSmoothFrames(ctl) || acts.length > 0 || !!actWait || !!talk.motion,
+  fixed60: () => prefs.fixed60Fps,
+  simulate: (dt) => {
+    stepActs();
+    stepDialog(dt);
+    stepTalkRead();
+    stepTalkMotion();
+    stepListen();
+    ctl.step(dt);
+  },
+  present: (dt) => {
+    ctl.render();
+    stepBackdrop(dt);
+    stepTools();
+    layout();
+  },
+});
 function frame(now) {
-  const dt = Math.min(.05, (now - last) / 1000); last = now;
-  stepActs();
-  stepDialog(dt);
-  stepTalkRead();
-  stepTalkMotion();
-  stepListen();
-  ctl.step(dt);
-  ctl.render();
-  stepBackdrop(dt);
-  stepTools();
-  layout();
+  advanceFrame(now);
   requestAnimationFrame(frame);
 }
 ctl.render();
